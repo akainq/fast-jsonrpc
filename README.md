@@ -28,8 +28,8 @@ Prepare:
 
 Do build:
    ```shell   
-   cmake .
-   make
+   root$ cmake .
+   root$ make
    ```
 
 
@@ -53,7 +53,7 @@ end
 #### NOTICE: You can change host, port and root dir in jsonrpcd.cfg file.
   ```shell
  
-  ./fjsonrpc 
+  root$./fjsonrpc 
      _____   ______     ___   ____  _____      _______     _______     ______ 
    |_   _|.' ____ \  .'   `.|_   \|_   _|    |_   __ \   |_   __ \  .' ___  |
      | |  | (___ \_|/  .-.  \ |   \ | | ______ | |__) |    | |__) |/ .'   \_|
@@ -69,7 +69,7 @@ Server started on port 5555...
  
  request:
    ```shell
-    curl -d " {"jsonrpc": "2.0", "method": "subtract", "params": ["world!"], "id": 1}" -X POST http://localhost:5555/
+     root$ curl -d " {"jsonrpc": "2.0", "method": "subtract", "params": ["world!"], "id": 1}" -X POST http://localhost:5555/
    ```
   
  response:
