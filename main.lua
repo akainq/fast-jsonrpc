@@ -29,7 +29,7 @@ function jsonrpc_request_handler2(a, b , c)
 end
 
 
-function jsonrpc_hello_world(js)
+function jsonrpc_hello_world(var1)
 
     local  result = {}
     result["response"] = "Hello "..var1

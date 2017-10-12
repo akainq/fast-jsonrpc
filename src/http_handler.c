@@ -1,29 +1,9 @@
-#include <sys/types.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <event.h>
-#include <evhttp.h>
+//
+// Created by akainq on 12.10.17.
+//
+#include "include/jsonrpcd.h"
+#include "include/http_handler.h"
 #include <json-c/json.h>
-#include <lua5.3/lua.h>
-#include <lua5.3/lualib.h>
-#include <lua5.3/lauxlib.h>
-#include <memory.h>
-#include <ctype.h>
-#include <uuid/uuid.h>
-
-lua_State *L;
-
-typedef  enum {false,true} bool;
-
-typedef struct t_params{
-
-    json_type type;
-    void * value;
-
-} params;
-
-typedef  enum {JSON_PARSE_ERROR,METHOD_NOT_FOUND, ARGUMENTS_NUM_ERROR} SERVICE_ERROR_TYPE;
 
 void request_handler(struct evhttp_request *req, void *arg) {
     ///Response buffer
@@ -84,28 +64,28 @@ void request_handler(struct evhttp_request *req, void *arg) {
                     if (strcmp(key, "params") == 0) {
 
                         jsonrpc_params_len = json_object_array_length(val);
-                         jsonrpc_params = calloc(jsonrpc_params_len, sizeof(params*));
+                        jsonrpc_params = calloc(jsonrpc_params_len, sizeof(params*));
 
-                            for (int i = 0; i < jsonrpc_params_len; i++) {
-                                struct json_object * tmp_ar_ob =  json_object_array_get_idx(val,i);
-                                type = json_object_get_type(tmp_ar_ob);
-                                jsonrpc_params[i].type = type;
+                        for (int i = 0; i < jsonrpc_params_len; i++) {
+                            struct json_object * tmp_ar_ob =  json_object_array_get_idx(val,i);
+                            type = json_object_get_type(tmp_ar_ob);
+                            jsonrpc_params[i].type = type;
 
-                                switch (type) {
-                                    case json_type_string:
-                                        jsonrpc_params[i].value = strdup(json_object_get_string(tmp_ar_ob));
+                            switch (type) {
+                                case json_type_string:
+                                    jsonrpc_params[i].value = strdup(json_object_get_string(tmp_ar_ob));
                                     break;
-                                    case json_type_int:
-                                        jsonrpc_params[i].value  = calloc(1, sizeof(void*));
-                                        jsonrpc_params[i].value  = (void*)json_object_get_int(tmp_ar_ob);
-
-                                        break;
-                                    case json_type_object:
+                                case json_type_int:
+                                    jsonrpc_params[i].value  = calloc(1, sizeof(void*));
+                                    jsonrpc_params[i].value  = (void*)json_object_get_int(tmp_ar_ob);
 
                                     break;
+                                case json_type_object:
 
-                                }
+                                    break;
+
                             }
+                        }
                     }
 
                     break;
@@ -130,20 +110,20 @@ void request_handler(struct evhttp_request *req, void *arg) {
 
         strcat(str_method,jsonrpc_method);
 
-       /// lua_Debug ldb;
-       // lua_getinfo(L, ">S", &ldb);
-       // lua_getstack(L,0, &ldb);
-       // lua_getinfo(L, ">nSl", &ldb);
+        /// lua_Debug ldb;
+        // lua_getinfo(L, ">S", &ldb);
+        // lua_getstack(L,0, &ldb);
+        // lua_getinfo(L, ">nSl", &ldb);
 
 
 
 
-          lua_getglobal(L,"get_num_args");
-          lua_pushlstring(L,str_method, strlen(str_method));
-          lua_pcall(L, 1, 1, 0);
-          const int arg_num = atoi(lua_tostring(L, -1));
-          int idx11 = lua_gettop(L);
-          lua_pop(L,1);
+        lua_getglobal(L,"get_num_args");
+        lua_pushlstring(L,str_method, strlen(str_method));
+        lua_pcall(L, 1, 1, 0);
+        const int arg_num = atoi(lua_tostring(L, -1));
+        int idx11 = lua_gettop(L);
+        lua_pop(L,1);
 
 
         if (arg_num == jsonrpc_params_len) {
@@ -213,7 +193,7 @@ void request_handler(struct evhttp_request *req, void *arg) {
         switch (error_type) {
 
             case JSON_PARSE_ERROR:
-                     evbuffer_add_printf(returnbuffer, "{\"jsonrpc\": \"2.0\",\"error\":{\"code\": -32700, \"message\": \"Parse error\", \"data\": \"%s\"}, \"id\": null}", error_desc);
+                evbuffer_add_printf(returnbuffer, "{\"jsonrpc\": \"2.0\",\"error\":{\"code\": -32700, \"message\": \"Parse error\", \"data\": \"%s\"}, \"id\": null}", error_desc);
                 break;
 
             case METHOD_NOT_FOUND:
@@ -240,47 +220,17 @@ void request_handler(struct evhttp_request *req, void *arg) {
     ///Free all resources
 
 
-     free(data);
-     free(jobj);
+    free(data);
+    free(jobj);
 
     if(jsonrpc_method)
-      free(jsonrpc_method);
+        free(jsonrpc_method);
     if(jsonrpc_ver)
-      free(jsonrpc_ver);
+        free(jsonrpc_ver);
     if(jsonrpc_id)
-      free(jsonrpc_id);
+        free(jsonrpc_id);
     //if(jsonrpc_params)
-     // free(jsonrpc_params);
+    // free(jsonrpc_params);
     evbuffer_free(returnbuffer);
 
-}
-
-void lua_init(){
-    L = luaL_newstate();
-    luaL_openlibs(L);
-    luaL_dofile(L,"../globals.lua");
-    int status = luaL_loadfile(L,"../main.lua");
-
-    if (status) {
-        fprintf(stderr, "Couldn't load file: %s\n", lua_tostring(L, -1));
-    }
-
-}
-
-int main(int argc, char **argv) {
-    u_short          http_port = 5555;
-    char          *http_addr = "0.0.0.0";
-    struct evhttp *http_server = NULL;
-
-    lua_init();
-    event_init();
-    http_server = evhttp_start(http_addr, http_port);
-    evhttp_set_gencb(http_server, request_handler, NULL);
-
-    fprintf(stderr, "Server started on port %d\n", http_port);
-    event_dispatch();
-
-    lua_close(L);   /* Cya, Lua */
-
-    return(0);
 }
