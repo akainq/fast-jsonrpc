@@ -1,7 +1,7 @@
 //
 // Created by akainq on 12.10.17.
 //
-
+#define _GNU_SOURCE
 #include <memory.h>
 #include "include/http_handler.h"
 #include "include/jsonrpcd.h"
@@ -42,7 +42,16 @@ int main(int argc, char **argv) {
 
     config_init(&cfg);
 
-    if (!config_read_file(&cfg, "jsonrpcd.cfg")) {
+    const char * path = getenv("JSONRPCD_PATH");
+
+    const char *  config_path;
+
+    if(path)
+    asprintf(&config_path,"%s/%s",path,"jsonrpcd.cfg");
+    else
+    asprintf(&config_path,"%s","jsonrpcd.cfg");
+
+    if (!config_read_file(&cfg,config_path )) {
         fprintf(stderr, "%s:%d - %s\n", config_error_file(&cfg),
                 config_error_line(&cfg), config_error_text(&cfg));
         config_destroy(&cfg);
@@ -79,6 +88,7 @@ int main(int argc, char **argv) {
     event_dispatch();
 
     lua_close(L);   /* Cya, Lua */
+    free(config_path);
 
     return(0);
 }
