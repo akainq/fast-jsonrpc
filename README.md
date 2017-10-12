@@ -5,6 +5,7 @@ Fast-JSONRPCD is a fast and simple micro-framework for lua.
 JSONRPC 2.0 spec implemented http://www.jsonrpc.org/specification
 
 
+
 ### Features:
 
 **Fast** - Written on C , build with [libevent](https://github.com/libevent/libevent) and [json-c](https://github.com/json-c/json-c) library. 
@@ -14,6 +15,10 @@ JSONRPC 2.0 spec implemented http://www.jsonrpc.org/specification
 
 **Flexibility** - embedded lua, strives to provide simple, 
 flexible meta-features that can be extended as needed.
+
+
+![Image of Yaktocat](./screen.png)]
+
 
 ### Build process:
 Prepare:
