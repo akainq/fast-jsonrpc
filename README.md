@@ -10,7 +10,7 @@ JSONRPC 2.0 spec implemented [JSONRPC 2.0](http://www.jsonrpc.org/specification)
 **Fast** - Written on C , build with [libevent](https://github.com/libevent/libevent) and [json-c](https://github.com/json-c/json-c) library. 
 23000 json-rpc calls per sec out of box.
 
-**Simple** - JSON-RPC methods is a lua functions, having hot sourcecode swap.
+**Simple** - JSON-RPC methods is a lua functions and hot-swapping already implemented.
 
 **Flexibility** - embedded lua, strives to provide simple, 
 flexible meta-features that can be extended as needed.
