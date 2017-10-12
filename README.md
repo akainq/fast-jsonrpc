@@ -20,11 +20,11 @@ Prepare:
  1. You need CMake => VERSION 3.9
 
  2. Dependencies libraries: 
-        - lua5.3.so, 
-        - libevent.so, 
-        - uuid.so, 
-        - json-c.so, 
-        - libconfig.so
+ - lua5.3.so, 
+ - libevent.so, 
+ - uuid.so, 
+ - json-c.so, 
+ - libconfig.so
 
 Do build:
    ```shell   
@@ -37,7 +37,7 @@ Do build:
 ### Example:
 
 **1.** Create first json-rpc method: 
-#### NOTICE: We need to use a json-rpc prefix for lua methods.
+#### NOTICE: We need to use a "jsonrpc_" prefix in lua methods declaration for protecting..
 
 main.lua
 ```lua
