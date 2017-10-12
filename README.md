@@ -1,7 +1,7 @@
-JSONRPCD LUA Service
+Fast-JSONRPCD Service for LUA
 =====================================
 
-JSONRPCD is a fast and simple micro-framework for lua.
+Fast-JSONRPCD is a fast and simple micro-framework for lua.
 JSONRPC 2.0 spec implemented http://www.jsonrpc.org/specification
 
 
