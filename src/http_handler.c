@@ -5,7 +5,13 @@
 #include "include/http_handler.h"
 #include <json-c/json.h>
 
-void request_handler(struct evhttp_request *req, void *arg) {
+
+
+static void server_job_function(struct job *job, lua_State * L) {
+
+
+    struct evhttp_request *req = job->user_data;
+
     ///Response buffer
     struct evbuffer *returnbuffer = evbuffer_new();
 
@@ -99,96 +105,99 @@ void request_handler(struct evhttp_request *req, void *arg) {
 
 
     ///LUA SCRIPT START
-
     json_object *jobj = json_object_new_object();
     const char *cstr2;
 
 
-    if(!service_error) {
-        int result = lua_pcall(L, 0, 0, 0);
-        char str_method[50] = "jsonrpc_";
 
-        strcat(str_method,jsonrpc_method);
+     if(!service_error) {
+         int result = lua_pcall(L, 0, 0, 0);
+         char str_method[50] = "jsonrpc_";
 
-        /// lua_Debug ldb;
-        // lua_getinfo(L, ">S", &ldb);
-        // lua_getstack(L,0, &ldb);
-        // lua_getinfo(L, ">nSl", &ldb);
+         strcat(str_method,jsonrpc_method);
 
-
-
-
-        lua_getglobal(L,"get_num_args");
-        lua_pushlstring(L,str_method, strlen(str_method));
-        lua_pcall(L, 1, 1, 0);
-        const int arg_num = atoi(lua_tostring(L, -1));
-        int idx11 = lua_gettop(L);
-        lua_pop(L,1);
+         /// lua_Debug ldb;
+         // lua_getinfo(L, ">S", &ldb);
+         // lua_getstack(L,0, &ldb);
+         // lua_getinfo(L, ">nSl", &ldb);
 
 
-        if (arg_num == jsonrpc_params_len) {
 
-            int status = lua_getglobal(L, str_method);
-            if (status != 0) {
 
-                for (int k = 0; k < jsonrpc_params_len; k++) {
+         lua_getglobal(L,"get_num_args");
+         lua_pushlstring(L,str_method, strlen(str_method));
+         lua_pcall(L, 1, 1, 0);
+         const int arg_num = atoi(lua_tostring(L, -1));
+         int idx11 = lua_gettop(L);
+         lua_pop(L,1);
 
-                    switch (jsonrpc_params[k].type) {
 
-                        case json_type_string:
-                            lua_pushlstring(L, jsonrpc_params[k].value, strlen(jsonrpc_params[k].value));
-                            break;
 
-                        case json_type_int:
-                            lua_pushnumber(L, (int) jsonrpc_params[k].value);
-                            break;
+                if (arg_num == jsonrpc_params_len) {
+
+                    int status = lua_getglobal(L, str_method);
+                    if (status != 0) {
+
+                        for (int k = 0; k < jsonrpc_params_len; k++) {
+
+                            switch (jsonrpc_params[k].type) {
+
+                                case json_type_string:
+                                    lua_pushlstring(L, jsonrpc_params[k].value, strlen(jsonrpc_params[k].value));
+                                    break;
+
+                                case json_type_int:
+                                    lua_pushnumber(L, (int)jsonrpc_params[k].value);
+                                    break;
+                            }
+
+                        }
+
+
+                        result = lua_pcall(L, jsonrpc_params_len, 1, 0);
+                        if (result) {
+                            fprintf(stderr, "Failed to run script: %s\n", lua_tostring(L, -1));
+                            return;
+                        }
+                        size_t len;
+                        //  const char *cstr = lua_tolstring(L, -1, &len);
+
+                        int idx = lua_gettop(L);
+
+                        lua_pushvalue(L, 1);
+                        lua_pushnil(L);
+
+
+                        while (lua_next(L, -2) != 0) {
+                            idx = lua_gettop(L);
+
+                            const char *key = lua_tostring(L, -2);
+                            const char *value = lua_tostring(L, -1);
+                            json_object *jstring = json_object_new_string(value);
+                            json_object_object_add(jobj, key, jstring);
+                            lua_pop(L, 1);
+
+                        }
+                        cstr2 = json_object_to_json_string(jobj);
+                        lua_pop(L, 2);
+                    } else {
+                        service_error = true;
+                        error_type = METHOD_NOT_FOUND;
                     }
+                } else {
+                    service_error = true;
+                    error_type = ARGUMENTS_NUM_ERROR;
 
                 }
-
-
-                result = lua_pcall(L, jsonrpc_params_len, 1, 0);
-                if (result) {
-                    fprintf(stderr, "Failed to run script: %s\n", lua_tostring(L, -1));
-                    return;
-                }
-                size_t len;
-                //  const char *cstr = lua_tolstring(L, -1, &len);
-
-                int idx = lua_gettop(L);
-
-                lua_pushvalue(L, 1);
-                lua_pushnil(L);
-
-
-                while (lua_next(L, -2) != 0) {
-                    idx = lua_gettop(L);
-
-                    const char *key = lua_tostring(L, -2);
-                    const char *value = lua_tostring(L, -1);
-                    json_object *jstring = json_object_new_string(value);
-                    json_object_object_add(jobj, key, jstring);
-                    lua_pop(L, 1);
-
-                }
-                cstr2 = json_object_to_json_string(jobj);
-                lua_pop(L, 2);
-            } else {
-                service_error = true;
-                error_type = METHOD_NOT_FOUND;
             }
-        } else {
-            service_error = true;
-            error_type = ARGUMENTS_NUM_ERROR;
 
-        }
-    }
     ///LUA END
 
     //struct json_object *jobj  = json_tokener_parse(data);
-    //const char * cstr = json_object_to_json_string(jobj);
+    //cstr2 = json_object_to_json_string(jobj);
 
-    if(service_error){
+    if(service_error)
+    {
         ///Prepare and send response ERROR
         switch (error_type) {
 
@@ -217,9 +226,6 @@ void request_handler(struct evhttp_request *req, void *arg) {
     evhttp_send_reply(req, HTTP_OK, "Client", returnbuffer);
 
 
-    ///Free all resources
-
-
     free(data);
     free(jobj);
 
@@ -229,8 +235,28 @@ void request_handler(struct evhttp_request *req, void *arg) {
         free(jsonrpc_ver);
     if(jsonrpc_id)
         free(jsonrpc_id);
-    //if(jsonrpc_params)
-    // free(jsonrpc_params);
+    if(jsonrpc_params)
+     free(jsonrpc_params);
     evbuffer_free(returnbuffer);
+    //evbuffer_free(reqbuffer);
+    free(job);
+
+
+}
+
+
+
+void request_handler(struct evhttp_request *req, void *arg) {
+
+    workqueue_t *workqueue = (workqueue_t *)arg;
+    job_t *job;
+    if ((job = malloc(sizeof(*job))) == NULL) {
+        return;
+
+    }
+    job->job_function = server_job_function;
+    job->user_data = req;
+
+    workqueue_add_job(workqueue, job);
 
 }

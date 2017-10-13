@@ -14,13 +14,16 @@
 #include <unistd.h>
 #include <event.h>
 #include <evhttp.h>
+#include <event2/thread.h>
 #include <json-c/json.h>
-#include <lua5.3/lua.h>
-#include <lua5.3/lualib.h>
-#include <lua5.3/lauxlib.h>
+#include "lua5.3/lua.h"
 #include <memory.h>
 #include <ctype.h>
 #include <uuid/uuid.h>
+#include "workqueue.h"
+
+
+static workqueue_t workqueue;
 
 typedef  enum {false,true} bool;
 
@@ -32,6 +35,8 @@ typedef struct t_params{
 } params;
 
 typedef  enum {JSON_PARSE_ERROR,METHOD_NOT_FOUND, ARGUMENTS_NUM_ERROR} SERVICE_ERROR_TYPE;
+
+
 
 
 void request_handler(struct evhttp_request *req, void *arg);
