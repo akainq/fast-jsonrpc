@@ -1,6 +1,9 @@
 //
 // Created by akainq on 12.10.17.
 //
+#ifdef __APPLE__
+#include <sys/types.h>
+#endif
 
 #ifndef FAST_JSONRPC_JSONRPCD_H
 #define FAST_JSONRPC_JSONRPCD_H
